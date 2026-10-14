@@ -81,13 +81,34 @@ O equipamento é construído usando geometrias básicas do Three.js:
   - **Modo Clássico:** Exibe etiqueta indicando a previsão clássica de **Distribuição Contínua** para qualquer orientação do momento magnético ($\mu$).
 - **Reset e Desativação:** Ao reiniciar a simulação, desligar o ímã ou alternar de modo/orbital, as etiquetas são ocultadas instantaneamente e o contador de tempo é reiniciado.
 
-## 4. Notas Futuras e Pontos de Manutenção
+## 4. Notas Físicas, Auditoria do Modelo e Referências Acadêmicas
 
-- **Performance e Impactos:** O número máximo de impactos na tela está configurado em 4000 (`maxImpacts = 4000`) com 240 partículas ativas para garantir alta densidade, feixes nítidos e maior duração (meia-vida) do padrão desenhado.
-- **Alteração de Parâmetros:** A velocidade base (`baseSpeed = 0.8`) é fixa por padrão físico e a intensidade magnética (`magnetStrength = 0.5`) é controlada pelo slider. O estado do ímã (Ligado/Desligado) altera as cores dos pólos (vermelho/azul para ativo, cinza/branco para inativo) e oculta as linhas de campo.
-- **Formato de Olho (Lábios):** A deflexão varia parabolicamente ao longo da largura lateral do feixe (eixo Z), reproduzindo fielmente o formato de lábios/olho do experimento real.
-- **Estado Inicial da Aplicação:** A simulação abre por padrão no **Modo Clássico**, com o **Ímã Desligado** (polos em cinza fosco e sem linhas de campo magnético) e com a animação **Pausada** (botão exibindo "Continuar" e sem dispersão prematura de partículas até o usuário dar o play).
-- **Câmera e Controles de Zoom:** O zoom nativo do `OrbitControls` foi substituído por uma lógica de zoom linear adaptativa e suave (`zoomCamera`), com limite mínimo de aproximação reduzido para `minDistance = 4` (permitindo inspecionar em detalhes milimétricos os impactos na tela, as linhas de campo e os polos dos ímãs) e limite máximo ampliado para `maxDistance = 200`. Foram adicionados botões flutuantes de HUD no canvas (+, − e redefinir visão), suporte a atalhos de teclado (`+`/`-` para zoom e `R` para resetar visão) e suporte a gestos de pinça (*pinch-to-zoom*) para dispositivos touch. Além disso, o alcance de visão da câmera (*far clipping plane*) é de `5000`.
-- **Foco Interativo nos Cards 3D:** Todos os cards narrativos da simulação (Capítulos 01 a 04 e o Card dinâmico de Resultados) agora contam com sistema interativo de foco ao clique. Ao clicar em qualquer card, a câmera realiza uma transição suave e amortecida (`easeInOutCubic`, ~850ms) enquadrando o card por completo, garantindo 100% de opacidade/legibilidade dos textos e fórmulas matemáticas (anulando névoa) e preservando a visão dos elementos 3D do aparato ao redor. Clicar novamente no card focado ou no botão de redefinição de visão restaura suavemente a perspectiva panorâmica geral.
-- **Atualização do Three.js:** O projeto utiliza a versão fixa `0.160.0` hospedada na Unpkg. Caso algum componente pare de funcionar futuramente, a versão no importmap pode precisar de revisão.
+### 4.1. Auditoria Conceitual Baseada em Mostafaeipour et al. (2025)
+Com base no estudo de elementos finitos e Monte Carlo publicado em *Physica Scripta* (100, 045410, 2025):
+- **Origem do Formato de Olho (Lábios):**  
+  No simulador clássico/escolar, frequentemente atribui-se o formato de lábios unicamente à variação espacial do campo magnético. No entanto, o artigo de 2025 demonstra que a fenda colimadora $A_2$ pré-ímã já possuía geometria lenticular em formato de olho ($l = 0,8\text{ mm} \times w = 35\ \mu\text{m}$). Sem campo ($B = 0$), o padrão resultante já projeta essa fenda parabólica. Com $B \neq 0$, o gradiente não uniforme $\frac{\partial B_z}{\partial z}$ bifurca esse contorno inicial em dois arcos simétricos.
+- **Distribuição Térmica de Velocidades de Maxwell-Boltzmann:**  
+  O forno opera a $T \approx 1323\text{ K}$ ($~1000\text{ }^\circ\text{C}$). Os átomos ejetados possuem distribuição de velocidades onde o tempo de trânsito pelo ímã ($t = L/v_x$) faz com que partículas mais lentas sofram deflexão vertical sensivelmente maior do que partículas velozes. Essa dispersão longitudinal gera a espessura realista observada nas linhas prateadas da chapa original.
+
+### 4.2. O Episódio Histórico do "Mau Charuto" (Friedrich & Herschbach, 2003)
+Conforme documentado por Friedrich & Herschbach no artigo *Physics Today* (56, 53–59, 2003):
+- A camada de prata atômica depositada sobre a chapa de vidro/metal era extremamente fina (ordem de uma única camada monoatômica, $\sim 10^{16}\text{ átomos/cm}^2$), tornando o padrão inicialmente **invisível a olho nu**.
+- Otto Stern recebia baixos salários como professor assistente e fumava charutos baratos com elevado teor de enxofre. Ao examinar a placa de perto junto a Walther Gerlach, o sopro ou a fumaça sulfurosa reagiu com a prata:
+  $$\mathrm{2\,Ag + S \longrightarrow Ag_2S} \quad (\text{sulfeto de prata, de coloração preta intensa})$$
+- Essa reação química fortuita agiu como a revelação de um filme fotográfico, permitindo visualizar os dois traços nítidos que confirmaram a quantização espacial e mudaram o curso da física atômica.
+
+### 4.3. Referências Bibliográficas
+1. **Gerlach, W., & Stern, O. (1922).** *Der experimentelle Nachweis der Richtungsquantelung im Magnetfeld.* Zeitschrift für Physik, 9(1), 349–352.
+2. **Gerlach, W., & Stern, O. (1922).** *Das magnetische Moment des Silberatoms.* Zeitschrift für Physik, 9(1), 353–355.
+3. **Mostafaeipour, F., et al. (2025).** *Simulation of atom trajectories in the original Stern–Gerlach experiment.* Physica Scripta, 100(4), 045410. [DOI: 10.1088/1402-4896/adbf6c](https://doi.org/10.1088/1402-4896/adbf6c).
+4. **Friedrich, B., & Herschbach, D. (2003).** *Stern and Gerlach: How a Bad Cigar Helped Reorient Atomic Physics.* Physics Today, 56(12), 53–59. [DOI: 10.1063/1.1650229](https://doi.org/10.1063/1.1650229).
+
+## 5. Notas Futuras e Pontos de Manutenção
+
+- **Performance e Impactos:** O número máximo de impactos na tela está configurado em 4000 (`maxImpacts = 4000`) com 240 partículas ativas para garantir alta densidade, feixes nítidos e maior duração do padrão desenhado.
+- **Alteração de Parâmetros:** A velocidade base (`baseSpeed = 0.8`) é modulada termicamente por partícula, e a intensidade magnética (`magnetStrength = 0.5`) é controlada pelo slider. O estado do ímã (Ligado/Desligado) altera as cores dos polos e oculta as linhas de campo.
+- **Estado Inicial da Aplicação:** A simulação abre por padrão no **Modo Clássico**, com o **Ímã Desligado** (polos em cinza fosco e sem linhas de campo magnético) e com a animação **Pausada** (botão exibindo "Continuar").
+- **Câmera e Controles de Zoom:** O zoom nativo do `OrbitControls` utiliza lógica linear adaptativa e suave (`zoomCamera`), com limite mínimo de aproximação em `minDistance = 4` e limite máximo de `maxDistance = 200`, com suporte a teclado (`+`/`-`/`R`), botões HUD flutuantes e gestos touch.
+- **Foco Interativo nos Cards 3D:** Todos os cards narrativos contam com transição amortecida (`easeInOutCubic`, ~850ms) ao clique, enquadrando o card e preservando a visualização dos componentes do aparato.
+- **Atualização do Three.js:** O projeto utiliza a versão fixa `0.160.0` hospedada na Unpkg.
 

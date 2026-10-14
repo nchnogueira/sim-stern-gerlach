@@ -350,6 +350,94 @@ input[type=range]::-webkit-slider-runnable-track {
     -webkit-hyphens: auto;
 }
 
+/* Seção de Referências Bibliográficas */
+.references-box {
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.references-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.references-title {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.references-list {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.references-list li {
+    padding-left: 0.2rem;
+}
+
+.references-list .ref-authors {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.references-list .ref-work {
+    color: #cbd5e1;
+}
+
+.references-list .ref-doi {
+    display: inline-block;
+    color: #38bdf8;
+    text-decoration: none;
+    font-size: 0.66rem;
+    word-break: break-all;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.references-list .ref-doi:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
+
+/* Citações sobrescritas nos textos */
+sup.ref-cite {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+    top: -0.45em;
+    margin-left: 1px;
+    margin-right: 2px;
+}
+
+sup.ref-cite a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 700;
+    padding: 0 1px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+sup.ref-cite a:hover {
+    color: #ffffff;
+    background-color: rgba(56, 189, 248, 0.25);
+}
+
 .ai-disclaimer {
     background: rgba(0, 0, 0, 0.3);
     border: 1px dashed rgba(255, 255, 255, 0.15);
