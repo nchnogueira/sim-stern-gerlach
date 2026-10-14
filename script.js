@@ -192,7 +192,7 @@ function buildPresentationLabels(parent) {
         {
             step: '04', kicker: t.ch04_kicker, title: t.ch04_title,
             accent: '#38bdf8', accent2: '#ec4899',
-            anchor: new THREE.Vector3(screenX, -8.5, 0), side: 'down', stemX: 30,
+            anchor: new THREE.Vector3(screenX, 1.0, -9.5), side: 'up', stemX: 68,
             html: `
                 <p>${t.ch04_p1}</p>
                 <ul class="nc-list">
@@ -326,15 +326,10 @@ function getCardFocusView(cfg) {
             targetLookAt: new THREE.Vector3(15.5 + shift, 4.5, 0),
             cameraPos: new THREE.Vector3(15.5 + shift, 8.0, 35)
         };
-    } else if (step === '04') {
+    } else if (step === '04' || isResult) {
         return {
-            targetLookAt: new THREE.Vector3(47.0 + shift, -5.5, 0),
-            cameraPos: new THREE.Vector3(47.0 + shift, -0.5, 36)
-        };
-    } else if (isResult) {
-        return {
-            targetLookAt: new THREE.Vector3(47.0 + shift, -6.0, 0),
-            cameraPos: new THREE.Vector3(47.0 + shift, -1.0, 36)
+            targetLookAt: new THREE.Vector3(47.5 + shift, 6.0, -9.5),
+            cameraPos: new THREE.Vector3(47.5 + shift, 8.5, 27)
         };
     }
 
@@ -1219,8 +1214,8 @@ function buildResultCardConfig() {
     const t = translations[currentLang] || translations.en;
     const base = {
         step: t.result_step,
-        anchor: new THREE.Vector3(screenX, -9.5, 0),
-        side: 'down', stemX: 30, index: 2,
+        anchor: new THREE.Vector3(screenX, 1.0, -9.5),
+        side: 'up', stemX: 68, index: 2,
         extraClass: 'is-result hidden-narrative',
         isResult: true
     };

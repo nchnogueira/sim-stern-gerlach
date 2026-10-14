@@ -705,7 +705,7 @@ kbd {
     --accent-2: transparent;
     --stem-x: 50%;
     --stem-h: 46px;
-    width: 296px;
+    width: 350px;
     pointer-events: none;
     opacity: var(--narrative-fog, 1);
 }
