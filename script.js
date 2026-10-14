@@ -87,6 +87,10 @@ function createNarrativeCard(cfg, parent) {
 
     const el = document.createElement('div');
     el.className = `narrative-anchor is-${side} ${extraClass}`.trim();
+    if (el.classList.contains('hidden-narrative')) {
+        el.setAttribute('aria-hidden', 'true');
+        el.inert = true;
+    }
     el.style.setProperty('--accent', accent);
     if (accent2) el.style.setProperty('--accent-2', accent2);
     el.style.setProperty('--stem-x', `${stemX}%`);
@@ -116,6 +120,8 @@ function createNarrativeCard(cfg, parent) {
         let isPointerDown = false;
 
         cardArticle.addEventListener('pointerdown', (e) => {
+            if (el.classList.contains('hidden-narrative')) return;
+            if (e.target.closest('a, button')) return;
             if (e.button !== undefined && e.button !== 0) return;
             pointerDownX = e.clientX;
             pointerDownY = e.clientY;
@@ -123,8 +129,14 @@ function createNarrativeCard(cfg, parent) {
         });
 
         cardArticle.addEventListener('pointerup', (e) => {
+            if (el.classList.contains('hidden-narrative')) {
+                isPointerDown = false;
+                return;
+            }
             if (!isPointerDown) return;
             isPointerDown = false;
+            // Se o clique foi em um link ou botão interno (como citações [1], [2]), não altera o foco do card
+            if (e.target.closest('a, button')) return;
             const dist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
             if (dist < 6) {
                 e.stopPropagation();
@@ -327,9 +339,20 @@ function getCardFocusView(cfg) {
             cameraPos: new THREE.Vector3(15.5 + shift, 8.0, 35)
         };
     } else if (step === '04' || isResult) {
+        // Enquadramento com o mesmo ângulo de rotação da câmera padrão da simulação:
+        // Câmera padrão: pos (0, 20, 80) olhando para (shift + 18, 0, 0), vetor delta: (-18, 20, 80)
+        // Alvo centralizado na região da tela detectora e dos cards (screenX = 49)
+        const targetX = 47.0 + shift;
+        const targetY = 3.5;
+        const targetZ = 0;
+        const scale = 0.42; // Fator de escala da distância mantendo o ângulo exato da câmera padrão
         return {
-            targetLookAt: new THREE.Vector3(47.5 + shift, 6.0, -9.5),
-            cameraPos: new THREE.Vector3(47.5 + shift, 8.5, 27)
+            targetLookAt: new THREE.Vector3(targetX, targetY, targetZ),
+            cameraPos: new THREE.Vector3(
+                targetX - 18 * scale,
+                targetY + 20 * scale,
+                targetZ + 80 * scale
+            )
         };
     }
 
@@ -710,6 +733,14 @@ function updateNarrativeVisibility() {
         const replacedByResult = lbl.userData.isVerdict && resultsReady && isNarrativeOn;
         const isHidden = !showCards || replacedByResult;
         lbl.element.classList.toggle('hidden-narrative', isHidden);
+        if (lbl.element.inert !== isHidden) {
+            lbl.element.inert = isHidden;
+            if (isHidden) {
+                lbl.element.setAttribute('aria-hidden', 'true');
+            } else {
+                lbl.element.removeAttribute('aria-hidden');
+            }
+        }
         if (isHidden && focusedCard === lbl) {
             clearCardFocus();
         }
@@ -719,6 +750,14 @@ function updateNarrativeVisibility() {
     if (activeResultCard) {
         const isHidden = !(isNarrativeOn && resultsReady);
         activeResultCard.element.classList.toggle('hidden-narrative', isHidden);
+        if (activeResultCard.element.inert !== isHidden) {
+            activeResultCard.element.inert = isHidden;
+            if (isHidden) {
+                activeResultCard.element.setAttribute('aria-hidden', 'true');
+            } else {
+                activeResultCard.element.removeAttribute('aria-hidden');
+            }
+        }
         if (isHidden && focusedCard === activeResultCard) {
             clearCardFocus();
         }
@@ -1477,6 +1516,32 @@ if (btnLangEn) {
 if (btnLangPt) {
     btnLangPt.addEventListener('click', () => setLanguage('pt'));
 }
+
+// Navegação suave e destaque visual ao clicar em citações de referência (#ref-1, etc.)
+document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="#ref-"]');
+    if (!link) return;
+
+    // Se o link pertencer a um card narrativo oculto, previne qualquer interação
+    const cardAnchor = link.closest('.narrative-anchor');
+    if (cardAnchor && cardAnchor.classList.contains('hidden-narrative')) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+    }
+
+    const targetId = link.getAttribute('href').slice(1);
+    const targetEl = document.getElementById(targetId);
+    if (targetEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetEl.classList.remove('ref-highlight');
+        void targetEl.offsetWidth; // força reflow para reiniciar animação
+        targetEl.classList.add('ref-highlight');
+        setTimeout(() => targetEl.classList.remove('ref-highlight'), 2500);
+    }
+});
 
 // Inicializar idioma, visual dos ímãs, textos explicativos, etiquetas e loop
 setLanguage(currentLang);

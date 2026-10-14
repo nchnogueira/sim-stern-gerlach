@@ -388,6 +388,14 @@ input[type=range]::-webkit-slider-runnable-track {
 
 .references-list li {
     padding-left: 0.2rem;
+    transition: background-color 0.35s ease, outline-color 0.35s ease, padding 0.35s ease;
+}
+
+.references-list li.ref-highlight {
+    background: rgba(56, 189, 248, 0.16);
+    outline: 1px solid rgba(56, 189, 248, 0.5);
+    border-radius: 6px;
+    padding: 4px 6px;
 }
 
 .references-list .ref-authors {
@@ -801,9 +809,11 @@ kbd {
 .nc-wrap {
     position: relative;
     transform: scale(var(--narrative-scale, 1));
+    visibility: visible;
     transition:
         opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.6s;
     transition-delay: calc(var(--i, 0) * 90ms);
 }
 
@@ -817,9 +827,20 @@ kbd {
     transform-origin: var(--stem-x) 0%;
 }
 
-/* Estado oculto: o card "recolhe" em direção ao componente */
+/* Estado oculto: o card "recolhe" em direção ao componente e desativa totalmente cliques/links/interações */
+.narrative-anchor.hidden-narrative,
+.narrative-anchor.hidden-narrative * {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
 .narrative-anchor.hidden-narrative .nc-wrap {
     opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.6s;
     transition-delay: 0s;
 }
 
