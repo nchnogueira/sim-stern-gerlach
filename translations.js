@@ -50,6 +50,8 @@ export const translations = {
         nav_elevate: "Descend / Ascend",
         nav_zoom: "Linear zoom",
         nav_reset: "Reset view",
+        card_click_to_focus: "Click card to focus camera",
+        card_click_to_reset: "Click card to restore view",
 
         // Rótulos 3D do Aparato
         apparatus_oven: "Oven with Ag atoms",
@@ -166,6 +168,8 @@ export const translations = {
         nav_elevate: "Descer / Subir",
         nav_zoom: "Zoom linear",
         nav_reset: "Redefinir visão",
+        card_click_to_focus: "Clique no card para focar a câmera",
+        card_click_to_reset: "Clique no card para restaurar a visão",
 
         // Rótulos 3D do Aparato
         apparatus_oven: "Forno com átomos de Ag",

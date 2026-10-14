@@ -106,11 +106,41 @@ function createNarrativeCard(cfg, parent) {
     obj.position.copy(anchor);
     // Alinha o ponto de ancoragem do card com a ponta da haste
     obj.center.set(stemX / 100, side === 'up' ? 1 : 0);
+    obj.userData.cfg = cfg;
     parent.add(obj);
+
+    const cardArticle = el.querySelector('.nc-card');
+    if (cardArticle) {
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+        let isPointerDown = false;
+
+        cardArticle.addEventListener('pointerdown', (e) => {
+            if (e.button !== undefined && e.button !== 0) return;
+            pointerDownX = e.clientX;
+            pointerDownY = e.clientY;
+            isPointerDown = true;
+        });
+
+        cardArticle.addEventListener('pointerup', (e) => {
+            if (!isPointerDown) return;
+            isPointerDown = false;
+            const dist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
+            if (dist < 6) {
+                e.stopPropagation();
+                focusNarrativeCard(obj, cfg);
+            }
+        });
+
+        const t = translations[currentLang] || translations.en;
+        cardArticle.setAttribute('title', t.card_click_to_focus || 'Click card to focus camera');
+    }
+
     return obj;
 }
 
 function clearPresentationLabels() {
+    clearCardFocus();
     presentationLabels.forEach(lbl => {
         if (lbl && lbl.parent) lbl.parent.remove(lbl);
         if (lbl && lbl.element && lbl.element.parentNode) {
@@ -203,8 +233,155 @@ controls.enableZoom = false; // Desabilitamos o zoom nativo para criar um ajuste
 controls.minDistance = 4; // Alcance de aproximação significativamente ampliado para detalhes dos impactos e ímãs
 controls.maxDistance = 200; // Limite amplo de afastamento panorâmico
 
+// Variáveis e Controle de Transição Suave de Câmera
+let isCameraTransitioning = false;
+let cameraTransitionProgress = 0;
+let cameraTransitionDuration = 0.85; // Duração ideal em segundos (~850ms)
+const cameraStartPos = new THREE.Vector3();
+const cameraTargetPos = new THREE.Vector3();
+const cameraStartLookAt = new THREE.Vector3();
+const cameraTargetLookAt = new THREE.Vector3();
+let cameraTransitionCallback = null;
+
+let focusedCard = null; // Referência ao card 3D atualmente em foco
+
+// Curva de interpolação cúbica (aceleração e desaceleração suaves)
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function smoothTransitionCamera(targetPos, targetLookAt, duration = 0.85, onComplete = null) {
+    cameraStartPos.copy(camera.position);
+    cameraTargetPos.copy(targetPos);
+    cameraStartLookAt.copy(controls.target);
+    cameraTargetLookAt.copy(targetLookAt);
+
+    cameraTransitionProgress = 0;
+    cameraTransitionDuration = Math.max(0.2, duration);
+    cameraTransitionCallback = onComplete;
+    isCameraTransitioning = true;
+}
+
+function cancelCameraTransition() {
+    if (isCameraTransitioning) {
+        isCameraTransitioning = false;
+        cameraTransitionCallback = null;
+    }
+}
+
+function updateCameraTransition(dt) {
+    if (!isCameraTransitioning) return;
+
+    cameraTransitionProgress += dt / cameraTransitionDuration;
+    if (cameraTransitionProgress >= 1) {
+        cameraTransitionProgress = 1;
+        isCameraTransitioning = false;
+    }
+
+    const t = easeInOutCubic(cameraTransitionProgress);
+    camera.position.lerpVectors(cameraStartPos, cameraTargetPos, t);
+    controls.target.lerpVectors(cameraStartLookAt, cameraTargetLookAt, t);
+
+    if (!isCameraTransitioning && typeof cameraTransitionCallback === 'function') {
+        const cb = cameraTransitionCallback;
+        cameraTransitionCallback = null;
+        cb();
+    }
+}
+
+// Limpa o estado de foco de qualquer card e restaura dicas de interface
+function clearCardFocus() {
+    if (focusedCard) {
+        if (focusedCard.element) {
+            focusedCard.element.classList.remove('is-card-focused');
+            const art = focusedCard.element.querySelector('.nc-card');
+            const t = translations[currentLang] || translations.en;
+            if (art) art.setAttribute('title', t.card_click_to_focus || 'Click card to focus camera');
+        }
+        focusedCard = null;
+    }
+    document.body.classList.remove('has-card-focused');
+}
+
+// Determina o enquadramento perfeito (posição da câmera e alvo) para cada card da simulação
+function getCardFocusView(cfg) {
+    const panelWidth = window.innerWidth > 768 ? 350 : 0;
+    const shift = panelWidth > 0 ? 2.5 : 0;
+
+    const step = cfg.step;
+    const isResult = cfg.isResult || (cfg.extraClass && cfg.extraClass.includes('is-result'));
+
+    if (step === '01') {
+        return {
+            targetLookAt: new THREE.Vector3(-11 + shift, 4.0, 0),
+            cameraPos: new THREE.Vector3(-11 + shift, 7.5, 33)
+        };
+    } else if (step === '02') {
+        return {
+            targetLookAt: new THREE.Vector3(-5.5 + shift, -3.2, 0),
+            cameraPos: new THREE.Vector3(-5.5 + shift, 1.2, 33)
+        };
+    } else if (step === '03') {
+        return {
+            targetLookAt: new THREE.Vector3(15.5 + shift, 4.5, 0),
+            cameraPos: new THREE.Vector3(15.5 + shift, 8.0, 35)
+        };
+    } else if (step === '04') {
+        return {
+            targetLookAt: new THREE.Vector3(47.0 + shift, -5.5, 0),
+            cameraPos: new THREE.Vector3(47.0 + shift, -0.5, 36)
+        };
+    } else if (isResult) {
+        return {
+            targetLookAt: new THREE.Vector3(47.0 + shift, -6.0, 0),
+            cameraPos: new THREE.Vector3(47.0 + shift, -1.0, 36)
+        };
+    }
+
+    // Fallback dinâmico para eventuais cards adicionais
+    const anchor = cfg.anchor || new THREE.Vector3();
+    const side = cfg.side || 'up';
+    if (side === 'up') {
+        return {
+            targetLookAt: new THREE.Vector3(anchor.x + 2 + shift, anchor.y + 2, 0),
+            cameraPos: new THREE.Vector3(anchor.x + 2 + shift, anchor.y + 5.5, 34)
+        };
+    } else {
+        return {
+            targetLookAt: new THREE.Vector3(anchor.x - 2 + shift, anchor.y - 2.5, 0),
+            cameraPos: new THREE.Vector3(anchor.x - 2 + shift, anchor.y + 2.5, 34)
+        };
+    }
+}
+
+// Coloca um card narrativo em evidência com transição suave da câmera
+function focusNarrativeCard(cardObj, cfg) {
+    const t = translations[currentLang] || translations.en;
+
+    // Se já estiver focado no mesmo card, alterna restaurando a visão panorâmica inicial
+    if (focusedCard === cardObj) {
+        clearCardFocus();
+        resetCamera(true);
+        return;
+    }
+
+    clearCardFocus();
+
+    focusedCard = cardObj;
+    if (cardObj.element) {
+        cardObj.element.classList.add('is-card-focused');
+        const art = cardObj.element.querySelector('.nc-card');
+        if (art) art.setAttribute('title', t.card_click_to_reset || 'Click card to restore view');
+    }
+    document.body.classList.add('has-card-focused');
+
+    const focusView = getCardFocusView(cfg);
+    smoothTransitionCamera(focusView.cameraPos, focusView.targetLookAt, 0.85);
+}
+
 // Função para aplicar zoom suave e proporcional
 function zoomCamera(directionFactor) {
+    cancelCameraTransition();
     const distance = camera.position.distanceTo(controls.target);
     // Passo adaptativo: ajuste fino milimétrico quando próximo, mais ágil quando distante
     const zoomStep = Math.max(0.7, Math.min(4.5, distance * 0.055));
@@ -218,16 +395,33 @@ function zoomCamera(directionFactor) {
     camera.position.copy(controls.target).add(directionVector.multiplyScalar(newDistance));
 }
 
-// Resetar Câmera para a perspectiva inicial
-function resetCamera() {
-    adjustCameraOffset();
-    camera.position.set(0, 20, 80);
-    controls.update();
+// Resetar Câmera para a perspectiva panorâmica inicial (com opção de animação suave)
+function resetCamera(smooth = true) {
+    clearCardFocus();
+    const panelWidth = window.innerWidth > 768 ? 350 : 0;
+    const shift = panelWidth > 0 ? 5 : 0;
+    const defaultTarget = new THREE.Vector3(shift + 18, 0, 0);
+    const defaultPos = new THREE.Vector3(0, 20, 80);
+
+    if (smooth) {
+        smoothTransitionCamera(defaultPos, defaultTarget, 0.85);
+    } else {
+        cancelCameraTransition();
+        camera.position.copy(defaultPos);
+        controls.target.copy(defaultTarget);
+        controls.update();
+    }
 }
+
+// Cancela a transição se o usuário manipular manualmente o OrbitControls
+controls.addEventListener('start', () => {
+    cancelCameraTransition();
+});
 
 // Lógica de Zoom no Scroll do Mouse e Trackpad
 renderer.domElement.addEventListener('wheel', (event) => {
     event.preventDefault();
+    cancelCameraTransition();
     const direction = event.deltaY > 0 ? 1 : -1;
     zoomCamera(direction);
 }, { passive: false });
@@ -237,6 +431,7 @@ let touchStartDistance = null;
 let touchInitialCameraDistance = null;
 
 renderer.domElement.addEventListener('touchstart', (event) => {
+    cancelCameraTransition();
     if (event.touches.length === 2) {
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
@@ -247,6 +442,7 @@ renderer.domElement.addEventListener('touchstart', (event) => {
 
 renderer.domElement.addEventListener('touchmove', (event) => {
     if (event.touches.length === 2 && touchStartDistance && touchInitialCameraDistance) {
+        cancelCameraTransition();
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
         const currentTouchDist = Math.hypot(dx, dy);
@@ -279,7 +475,7 @@ if (btnZoomOut) {
     btnZoomOut.addEventListener('click', () => zoomCamera(2.2));
 }
 if (btnResetView) {
-    btnResetView.addEventListener('click', resetCamera);
+    btnResetView.addEventListener('click', () => resetCamera(true));
 }
 if (btnNavHelp && navHelpPanel) {
     btnNavHelp.addEventListener('click', (e) => {
@@ -314,13 +510,18 @@ window.addEventListener('keydown', (event) => {
         controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
     }
 
+    // Cancelar transição suave quando o usuário assume controle por teclado
+    if (event.key !== 'r' && event.key !== 'R') {
+        cancelCameraTransition();
+    }
+
     // Ações pontuais imediatas
     if (event.key === '+' || event.key === '=') {
         zoomCamera(-2.0);
     } else if (event.key === '-' || event.key === '_') {
         zoomCamera(2.0);
     } else if (event.key === 'r' || event.key === 'R') {
-        resetCamera();
+        resetCamera(true);
     }
 
     // Prevenir rolagem padrão da página em teclas de navegação
@@ -512,12 +713,20 @@ function updateNarrativeVisibility() {
 
     presentationLabels.forEach(lbl => {
         const replacedByResult = lbl.userData.isVerdict && resultsReady && isNarrativeOn;
-        lbl.element.classList.toggle('hidden-narrative', !showCards || replacedByResult);
+        const isHidden = !showCards || replacedByResult;
+        lbl.element.classList.toggle('hidden-narrative', isHidden);
+        if (isHidden && focusedCard === lbl) {
+            clearCardFocus();
+        }
     });
 
     // Card de Resultado: segue o botão de Notas Explicativas e permanece visível mesmo com a simulação pausada
     if (activeResultCard) {
-        activeResultCard.element.classList.toggle('hidden-narrative', !(isNarrativeOn && resultsReady));
+        const isHidden = !(isNarrativeOn && resultsReady);
+        activeResultCard.element.classList.toggle('hidden-narrative', isHidden);
+        if (isHidden && focusedCard === activeResultCard) {
+            clearCardFocus();
+        }
     }
 
     // Evita informação duplicada: os rótulos simples saem de cena enquanto os cards estão visíveis
@@ -975,6 +1184,9 @@ function removeCSS2DLabel(lbl) {
 function clearDetectorLabels() {
     activeDetectorLabels.forEach(removeCSS2DLabel);
     activeDetectorLabels = [];
+    if (focusedCard === activeResultCard) {
+        clearCardFocus();
+    }
     removeCSS2DLabel(activeResultCard);
     activeResultCard = null;
 }
@@ -1009,7 +1221,8 @@ function buildResultCardConfig() {
         step: t.result_step,
         anchor: new THREE.Vector3(screenX, -9.5, 0),
         side: 'down', stemX: 30, index: 2,
-        extraClass: 'is-result hidden-narrative'
+        extraClass: 'is-result hidden-narrative',
+        isResult: true
     };
 
     if (simMode === 'spin') {
@@ -1135,6 +1348,7 @@ function updateDetectorLabels(dt) {
 }
 
 function resetSimulation() {
+    clearCardFocus();
     clearImpacts();
     modeActiveTimer = 0;
     createDetectorLabels();
@@ -1163,7 +1377,11 @@ function animate(timestamp) {
     const dt = lastFrameTimestamp ? Math.min((timestamp - lastFrameTimestamp) / 1000, 0.1) : 0;
     lastFrameTimestamp = timestamp;
 
-    updateCameraNavigation(dt);
+    if (isCameraTransitioning) {
+        updateCameraTransition(dt);
+    } else {
+        updateCameraNavigation(dt);
+    }
     controls.update();
 
     if (isRunning) {
@@ -1184,10 +1402,11 @@ function animate(timestamp) {
     updateDetectorLabels(dt);
 
     // Ajustar opacidade das labels baseado na distância da câmera (simulando Fog 3D)
+    // Se algum card estiver em foco, mantemos opacidade máxima (1.0) para legibilidade cristalina
     const dist = camera.position.distanceTo(controls.target);
     const fogDensity = 0.0125;
     const fogFactor = Math.max(0, Math.exp(-Math.pow((Math.max(0, dist - 20)) * fogDensity, 2)));
-    labelRenderer.domElement.style.opacity = fogFactor;
+    labelRenderer.domElement.style.opacity = focusedCard ? 1.0 : fogFactor;
 
     // Scale para os cards narrativos: tamanho cheio na visão inicial (~86 u), encolhem ao afastar
     // e se ajustam a telas mais baixas (notebooks/projetores)
