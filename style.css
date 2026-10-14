@@ -68,6 +68,45 @@ canvas {
     gap: 0.6rem;
 }
 
+.lang-selector-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.2rem;
+}
+
+.lang-selector {
+    display: inline-flex;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.lang-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.5px;
+}
+
+.lang-btn:hover {
+    color: var(--text-primary);
+}
+
+.lang-btn.active {
+    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.45);
+}
+
 h1 {
     font-size: 1.5rem;
     font-weight: 800;

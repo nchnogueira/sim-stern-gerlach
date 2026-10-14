@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Stern-Gerlach</title>
+    <title>Stern-Gerlach Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -17,22 +17,22 @@
         <canvas id="simulationCanvas"></canvas>
 
         <!-- Controles Flutuantes de Zoom e Visualização -->
-        <div class="viewport-controls" aria-label="Controles de Câmera e Zoom">
-            <button id="btn-zoom-in" class="viewport-btn" title="Aproximar Zoom (+)" aria-label="Aproximar Zoom">
+        <div class="viewport-controls" aria-label="Controles de Câmera e Zoom" data-i18n-aria="aria_viewport_controls">
+            <button id="btn-zoom-in" class="viewport-btn" title="Aproximar Zoom (+)" aria-label="Aproximar Zoom" data-i18n-title="zoom_in" data-i18n-aria="zoom_in">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
             </button>
-            <button id="btn-zoom-out" class="viewport-btn" title="Afastar Zoom (-)" aria-label="Afastar Zoom">
+            <button id="btn-zoom-out" class="viewport-btn" title="Afastar Zoom (-)" aria-label="Afastar Zoom" data-i18n-title="zoom_out" data-i18n-aria="zoom_out">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
             </button>
             <button id="btn-reset-view" class="viewport-btn" title="Redefinir Visão da Câmera (R)"
-                aria-label="Redefinir Visão da Câmera">
+                aria-label="Redefinir Visão da Câmera" data-i18n-title="reset_view" data-i18n-aria="reset_view">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -40,7 +40,7 @@
                 </svg>
             </button>
             <button id="btn-nav-help" class="viewport-btn" title="Guia de Navegação (Teclado e Câmera)"
-                aria-label="Guia de Navegação">
+                aria-label="Guia de Navegação" data-i18n-title="nav_help" data-i18n-aria="nav_help">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
@@ -58,30 +58,36 @@
             <!-- Painel de Dicas de Teclado e Navegação -->
             <div id="nav-help-panel" class="nav-help-panel" role="tooltip" aria-hidden="true">
                 <div class="nav-help-header">
-                    <span>Navegação 3D</span>
-                    <button id="btn-close-nav-help" class="nav-help-close" aria-label="Fechar guia">&times;</button>
+                    <span data-i18n="nav_title">Navegação 3D</span>
+                    <button id="btn-close-nav-help" class="nav-help-close" aria-label="Fechar guia" data-i18n-aria="close_guide">&times;</button>
                 </div>
                 <ul class="nav-help-list">
-                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Mover câmera</span></li>
-                    <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> <span>Girar visão</span></li>
-                    <li><kbd>Q</kbd> / <kbd>E</kbd> <span>Descer / Subir</span></li>
-                    <li><kbd>+</kbd> / <kbd>-</kbd> <span>Zoom linear</span></li>
-                    <li><kbd>R</kbd> <span>Redefinir visão</span></li>
+                    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span data-i18n="nav_move">Mover câmera</span></li>
+                    <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> <span data-i18n="nav_rotate">Girar visão</span></li>
+                    <li><kbd>Q</kbd> / <kbd>E</kbd> <span data-i18n="nav_elevate">Descer / Subir</span></li>
+                    <li><kbd>+</kbd> / <kbd>-</kbd> <span data-i18n="nav_zoom">Zoom linear</span></li>
+                    <li><kbd>R</kbd> <span data-i18n="nav_reset">Redefinir visão</span></li>
                 </ul>
             </div>
         </div>
 
         <div class="glass-panel control-panel">
             <div class="panel-header">
-                <h1>Simulador de Stern-Gerlach</h1>
-                <p class="description">
+                <div class="lang-selector-container">
+                    <div class="lang-selector" role="group" aria-label="Language Selector">
+                        <button id="lang-en" class="lang-btn active" data-lang="en">EN</button>
+                        <button id="lang-pt" class="lang-btn" data-lang="pt">PT</button>
+                    </div>
+                </div>
+                <h1 data-i18n="title">Simulador de Stern-Gerlach</h1>
+                <p class="description" data-i18n="desc1">
                     Quando Otto Stern e Walther Gerlach dispararam átomos de prata através de um campo magnético não
                     uniforme, esperavam testar os limites do modelo atômico clássico, que previa uma mancha contínua de
                     impactos na placa detectora. O padrão observado — dois traços nitidamente separados — provou que os
                     átomos não obedeciam às leis da mecânica clássica, mas sim aos princípios discretos do mundo
                     quântico.
                 </p>
-                <p class="description">
+                <p class="description" data-i18n="desc2">
                     No entanto, o experimento guarda uma ironia histórica: em 1922, nem os próprios cientistas
                     dimensionaram o que haviam descoberto. Stern e Gerlach interpretaram o desvio como a confirmação
                     direta da "quantização espacial" das órbitas no modelo atômico de Bohr-Sommerfeld, quando, na
@@ -93,16 +99,16 @@
             </div>
 
             <div class="control-group">
-                <label>Modo de Simulação</label>
+                <label data-i18n="sim_mode">Modo de Simulação</label>
                 <div class="toggle-container mode-toggles">
-                    <button id="btn-classic" class="toggle-btn active">Clássico</button>
-                    <button id="btn-orbital" class="toggle-btn">Orbital</button>
-                    <button id="btn-quantum" class="toggle-btn">Spin</button>
+                    <button id="btn-classic" class="toggle-btn active" data-i18n="mode_classic">Clássico</button>
+                    <button id="btn-orbital" class="toggle-btn" data-i18n="mode_orbital">Orbital</button>
+                    <button id="btn-quantum" class="toggle-btn" data-i18n="mode_spin">Spin</button>
                 </div>
             </div>
 
             <div class="control-group" id="orbital-selector-group" style="display: none;">
-                <label>Orbital Quântico (Momento L)</label>
+                <label data-i18n="orbital_quantum">Orbital Quântico (Momento L)</label>
                 <div class="toggle-container">
                     <button class="toggle-btn orbital-btn active" data-l="0">s (1)</button>
                     <button class="toggle-btn orbital-btn" data-l="1">p (3)</button>
@@ -112,41 +118,41 @@
             </div>
 
             <div class="control-group">
-                <label>Estado do Ímã</label>
+                <label data-i18n="magnet_state">Estado do Ímã</label>
                 <div class="toggle-container">
-                    <button id="btn-magnet-on" class="toggle-btn">Ligado</button>
-                    <button id="btn-magnet-off" class="toggle-btn active">Desligado</button>
+                    <button id="btn-magnet-on" class="toggle-btn" data-i18n="state_on">Ligado</button>
+                    <button id="btn-magnet-off" class="toggle-btn active" data-i18n="state_off">Desligado</button>
                 </div>
             </div>
 
             <div class="control-group">
-                <label for="magnet-slider">Intensidade do Imã</label>
+                <label for="magnet-slider" data-i18n="magnet_strength">Intensidade do Imã</label>
                 <input type="range" id="magnet-slider" min="0" max="1" step="0.02" value="0.5">
             </div>
 
             <div class="control-group">
-                <label>Controle da Simulação</label>
+                <label data-i18n="sim_controls">Controle da Simulação</label>
                 <div class="action-btn-container">
                     <button id="btn-play-pause" class="action-btn is-paused">
-                        <span id="play-pause-icon">▶</span> <span id="play-pause-text">Continuar</span>
+                        <span id="play-pause-icon">▶</span> <span id="play-pause-text" data-i18n="btn_resume">Continuar</span>
                     </button>
                     <button id="btn-reset" class="action-btn reset">
-                        <span>↺</span> <span>Reiniciar</span>
+                        <span>↺</span> <span data-i18n="btn_reset">Reiniciar</span>
                     </button>
                 </div>
             </div>
 
             <div class="control-group">
-                <label>Notas Explicativas</label>
+                <label data-i18n="explanatory_notes">Notas Explicativas</label>
                 <div class="toggle-container">
-                    <button id="btn-narrative-on" class="toggle-btn active">Exibir</button>
-                    <button id="btn-narrative-off" class="toggle-btn">Ocultar</button>
+                    <button id="btn-narrative-on" class="toggle-btn active" data-i18n="notes_show">Exibir</button>
+                    <button id="btn-narrative-off" class="toggle-btn" data-i18n="notes_hide">Ocultar</button>
                 </div>
             </div>
 
             <div class="credits-box">
                 <div class="credits-header">
-                    <span class="credits-title">Autoria</span>
+                    <span class="credits-title" data-i18n="authorship">Autoria</span>
                     <span class="year-badge">2026</span>
                 </div>
                 <ul class="authors-list">
@@ -155,7 +161,7 @@
                     <li>Caroline Lima da Costa Silvestre</li>
                     <li>Glendha Ribeiro Fonseca</li>
                 </ul>
-                <p class="affiliation">Discentes do Programa de Pós-Graduação em Ciências Naturais da UENF, Rio de
+                <p class="affiliation" data-i18n="affiliation">Discentes do Programa de Pós-Graduação em Ciências Naturais da UENF, Rio de
                     Janeiro, Brasil</p>
                 <div class="ai-disclaimer">
                     <div class="ai-badge">
@@ -168,9 +174,9 @@
                             <path d="M2 14h2" />
                             <path d="M20 14h2" />
                         </svg>
-                        <span>Nota de Uso de IA</span>
+                        <span data-i18n="ai_badge">Nota de Uso de IA</span>
                     </div>
-                    <p>Esta simulação foi desenvolvida com auxílio de ferramentas de inteligência artificial da Google
+                    <p data-i18n="ai_disclaimer">Esta simulação foi desenvolvida com auxílio de ferramentas de inteligência artificial da Google
                         (Antigravity). Os autores afirmam que todo o conteúdo físico, formalismo matemático e código
                         computacional foram integralmente revisados e validados, assumindo responsabilidade pelo
                         projeto.</p>

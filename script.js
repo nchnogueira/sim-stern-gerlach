@@ -4,8 +4,12 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { translations } from './translations.js';
 
 const canvas = document.getElementById('simulationCanvas');
+
+// Idioma atual: padrão 'en' (Inglês)
+let currentLang = localStorage.getItem('sg_sim_lang') || 'en';
 
 // Variáveis da simulação
 let simMode = 'classic'; // 'classic' | 'orbital' | 'spin'
@@ -19,6 +23,8 @@ let apparatusNameLabels = []; // Rótulos simples (Forno, Colimadores...) — oc
 let isNarrativeOn = true; // Modo Narrativa ativo por padrão
 
 // UI Elements
+const btnLangEn = document.getElementById('lang-en');
+const btnLangPt = document.getElementById('lang-pt');
 const btnClassic = document.getElementById('btn-classic');
 const btnOrbital = document.getElementById('btn-orbital');
 const btnQuantum = document.getElementById('btn-quantum');
@@ -104,56 +110,68 @@ function createNarrativeCard(cfg, parent) {
     return obj;
 }
 
+function clearPresentationLabels() {
+    presentationLabels.forEach(lbl => {
+        if (lbl && lbl.parent) lbl.parent.remove(lbl);
+        if (lbl && lbl.element && lbl.element.parentNode) {
+            lbl.element.parentNode.removeChild(lbl.element);
+        }
+    });
+    presentationLabels = [];
+}
+
 function buildPresentationLabels(parent) {
+    clearPresentationLabels();
     const tex = (s) => renderTex(s, true);
     const inl = (s) => renderTex(s, false);
+    const t = translations[currentLang] || translations.en;
 
     const chapters = [
         {
-            step: '01', kicker: 'A fonte', title: 'Um jato de prata',
+            step: '01', kicker: t.ch01_kicker, title: t.ch01_title,
             accent: '#fbbf24',
             anchor: new THREE.Vector3(-14, 2.3, 0), side: 'up', stemX: 16,
             html: `
-                <p>No forno, a cerca de 1000 °C, a prata evapora e escapa por um orifício como um jato de <b>átomos neutros</b>.</p>
-                <p>Dos seus 47 elétrons, 46 fecham camadas e se cancelam. Todo o magnetismo do átomo fica nas mãos de <b>um único elétron</b>, no orbital 5s:</p>
+                <p>${t.ch01_p1}</p>
+                <p>${t.ch01_p2}</p>
                 <div class="nc-eq">
                     ${tex('\\mathrm{Ag}:\\;[\\mathrm{Kr}]\\,4d^{10}\\,5s^{1}')}
                     ${tex('l = 0 \\;\\Rightarrow\\; |\\vec L| = \\hbar\\sqrt{l(l+1)} = 0')}
                     ${tex('\\vec\\mu_L = -\\frac{e}{2m_e}\\,\\vec L = \\vec 0')}
                 </div>
-                <p class="nc-punch">Se só existisse o momento orbital, este átomo seria magneticamente mudo.</p>`
+                <p class="nc-punch">${t.ch01_punch}</p>`
         },
         {
-            step: '02', kicker: 'O feixe', title: 'Só passa o que vem reto',
+            step: '02', kicker: t.ch02_kicker, title: t.ch02_title,
             accent: '#4ade80',
             anchor: new THREE.Vector3(-7.5, -2.7, 0), side: 'down', stemX: 22,
             html: `
-                <p>Duas fendas em sequência barram todo átomo que sai torto. Do jato caótico do forno sobra um <b>feixe fino e reto</b>.</p>
-                <p class="nc-punch">É a nossa régua: qualquer desvio daqui em diante só pode ser obra do campo.</p>`
+                <p>${t.ch02_p1}</p>
+                <p class="nc-punch">${t.ch02_punch}</p>`
         },
         {
-            step: '03', kicker: 'O teste', title: 'Um campo que empurra',
+            step: '03', kicker: t.ch03_kicker, title: t.ch03_title,
             accent: '#fb7185', accent2: '#60a5fa',
             anchor: new THREE.Vector3(magnetX, 6.2, 0), side: 'up', stemX: 34,
             html: `
-                <p>O polo N termina em ponta; o polo S, em sulco. As linhas se apertam no alto e se abrem embaixo: o campo é <b>não uniforme</b>.</p>
-                <p>Um campo uniforme só faria o ímã atômico precessar, sem desviá-lo. Quem empurra é o <b>gradiente</b>:</p>
+                <p>${t.ch03_p1}</p>
+                <p>${t.ch03_p2}</p>
                 <div class="nc-eq">${tex('F_z = \\mu_z\\,\\frac{\\partial B_z}{\\partial z}')}</div>
-                <p class="nc-punch">A orientação de cada átomo se converte em posição na tela.</p>`
+                <p class="nc-punch">${t.ch03_punch}</p>`
         },
         {
-            step: '04', kicker: 'O veredito', title: 'Nem contínuo, nem um: dois',
+            step: '04', kicker: t.ch04_kicker, title: t.ch04_title,
             accent: '#38bdf8', accent2: '#ec4899',
             anchor: new THREE.Vector3(screenX, -8.5, 0), side: 'down', stemX: 30,
             html: `
-                <p>Cada átomo deixa um ponto na placa. Três teorias, três apostas:</p>
+                <p>${t.ch04_p1}</p>
                 <ul class="nc-list">
-                    <li style="--c:#cbd5e1"><b>Clássica</b><span>faixa contínua — ${inl('\\mu_z')} assume qualquer valor</span></li>
-                    <li style="--c:#a78bfa"><b>Orbital (${inl('l = 0')})</b><span>um único ponto central, sem desvio</span></li>
-                    <li class="is-real"><b>Observado</b><span>duas manchas simétricas, nada no meio</span></li>
+                    <li style="--c:#cbd5e1"><b>${t.ch04_classical_name}</b><span>${t.ch04_classical_desc(inl('\\mu_z'))}</span></li>
+                    <li style="--c:#a78bfa"><b>${t.ch04_orbital_name(inl('l = 0'))}</b><span>${t.ch04_orbital_desc}</span></li>
+                    <li class="is-real"><b>${t.ch04_observed_name}</b><span>${t.ch04_observed_desc}</span></li>
                 </ul>
                 <div class="nc-eq">${tex('\\mu_z = -g_s\\,\\mu_B\\,m_s, \\qquad m_s = \\pm\\tfrac{1}{2}')}</div>
-                <p class="nc-punch">Frankfurt, 1922. A natureza respondeu "dois" — e o nome para isso só surgiria em 1925: spin.</p>`
+                <p class="nc-punch">${t.ch04_punch}</p>`
         }
     ];
 
@@ -508,13 +526,14 @@ function updateNarrativeVisibility() {
 
 function togglePlayPause() {
     isRunning = !isRunning;
+    const t = translations[currentLang] || translations.en;
     if (isRunning) {
         playPauseIcon.textContent = '⏸';
-        playPauseText.textContent = 'Pausar';
+        playPauseText.textContent = t.btn_pause;
         btnPlayPause.classList.remove('is-paused');
     } else {
         playPauseIcon.textContent = '▶';
-        playPauseText.textContent = 'Continuar';
+        playPauseText.textContent = t.btn_resume;
         btnPlayPause.classList.add('is-paused');
     }
 
@@ -568,7 +587,8 @@ oven.position.set(-14, 0, 0);
 oven.castShadow = true;
 oven.receiveShadow = true;
 apparatus.add(oven);
-apparatusNameLabels.push(createLabel('Forno com átomos de Ag', 'label', new THREE.Vector3(0, 3.5, 0), oven));
+const labelOven = createLabel('', 'label', new THREE.Vector3(0, 3.5, 0), oven);
+apparatusNameLabels.push(labelOven);
 
 const holeGeom = new THREE.CylinderGeometry(0.2, 0.2, 4.1, 16);
 holeGeom.rotateZ(Math.PI / 2);
@@ -600,7 +620,8 @@ const col2Bottom = new THREE.Mesh(colGeom, colMat);
 col2Bottom.position.set(-6, -1.3, 0);
 col2Bottom.castShadow = true;
 apparatus.add(col2Bottom);
-apparatusNameLabels.push(createLabel('Colimadores', 'label', new THREE.Vector3(-7.5, 3.5, 0), apparatus));
+const labelCollimators = createLabel('', 'label', new THREE.Vector3(-7.5, 3.5, 0), apparatus);
+apparatusNameLabels.push(labelCollimators);
 
 // Magnets
 const magnetX = 14;
@@ -643,7 +664,8 @@ spole.castShadow = true;
 spole.receiveShadow = true;
 apparatus.add(spole);
 const labelS = createLabel('S', 'label magnet-label magnet-s', new THREE.Vector3(0, 0, 2.6), spole);
-apparatusNameLabels.push(createLabel('Ímãs', 'label', new THREE.Vector3(magnetX, 7, 0), apparatus));
+const labelMagnets = createLabel('', 'label', new THREE.Vector3(magnetX, 7, 0), apparatus);
+apparatusNameLabels.push(labelMagnets);
 
 function updateMagnetVisuals() {
     if (isMagnetOn) {
@@ -742,7 +764,16 @@ screen.position.set(screenX, 0, 0);
 screen.rotation.y = -Math.PI / 2;
 screen.receiveShadow = true;
 apparatus.add(screen);
-apparatusNameLabels.push(createLabel('Tela Detectora', 'label', new THREE.Vector3(screenX, 9, 0), apparatus));
+const labelDetectorScreen = createLabel('', 'label', new THREE.Vector3(screenX, 9, 0), apparatus);
+apparatusNameLabels.push(labelDetectorScreen);
+
+function updateApparatusLabels() {
+    const t = translations[currentLang] || translations.en;
+    if (labelOven && labelOven.element) labelOven.element.innerHTML = t.apparatus_oven;
+    if (labelCollimators && labelCollimators.element) labelCollimators.element.innerHTML = t.apparatus_collimators;
+    if (labelMagnets && labelMagnets.element) labelMagnets.element.innerHTML = t.apparatus_magnets;
+    if (labelDetectorScreen && labelDetectorScreen.element) labelDetectorScreen.element.innerHTML = t.apparatus_screen;
+}
 
 // Cards narrativos (precisam de magnetX e screenX já definidos)
 buildPresentationLabels(apparatus);
@@ -973,8 +1004,9 @@ function createBeamTag({ main, sub = '', color, color2 = null, y, compact = fals
 function buildResultCardConfig() {
     const tex = (s) => renderTex(s, true);
     const inl = (s) => renderTex(s, false);
+    const t = translations[currentLang] || translations.en;
     const base = {
-        step: 'Resultado',
+        step: t.result_step,
         anchor: new THREE.Vector3(screenX, -9.5, 0),
         side: 'down', stemX: 30, index: 2,
         extraClass: 'is-result hidden-narrative'
@@ -983,16 +1015,16 @@ function buildResultCardConfig() {
     if (simMode === 'spin') {
         return {
             ...base,
-            kicker: 'Spin ½', title: 'Dois feixes, nada no meio',
+            kicker: t.res_spin_kicker, title: t.res_spin_title,
             accent: '#38bdf8', accent2: '#ec4899',
             html: `
-                <p>O elétron 5s carrega um momento angular <b>intrínseco</b>, o spin, com ${inl('s = \\tfrac{1}{2}')}. Sua projeção admite só ${inl('2s+1 = 2')} valores:</p>
+                <p>${t.res_spin_p1(inl('s = \\tfrac{1}{2}'), inl('2s+1 = 2'))}</p>
                 <div class="nc-eq">
                     ${tex('S_z = m_s\\,\\hbar, \\qquad m_s = \\pm\\tfrac{1}{2}')}
                     ${tex('\\mu_z = -g_s\\,\\mu_B\\,m_s \\approx \\mp\\,\\mu_B \\quad (g_s \\approx 2{,}002)')}
                 </div>
-                <p>Os átomos chegam com orientações aleatórias, mas a medida só encontra dois resultados: <b>metade sobe, metade desce</b>, em feixes simétricos.</p>
-                <p class="nc-punch">O spin não é uma esfera girando: é uma propriedade quântica sem análogo clássico.</p>`
+                <p>${t.res_spin_p2}</p>
+                <p class="nc-punch">${t.res_spin_punch}</p>`
         };
     }
 
@@ -1001,18 +1033,16 @@ function buildResultCardConfig() {
         const n = 2 * l + 1;
         const letter = ['s', 'p', 'd', 'f'][l];
         const detail = l === 0
-            ? `<p>No orbital s (${inl('l = 0')}) só existe ${inl('m_l = 0')}: não há momento magnético, e o átomo atravessa o ímã <b>em linha reta</b>.</p>`
-            : `<p>No orbital ${letter} (${inl(`l = ${l}`)}) há <b>${inl(`2l+1 = ${n}`)}</b> valores de ${inl('m_l')}, igualmente espaçados — e o feixe ${inl('m_l = 0')} passa sem desvio.</p>`;
-        const punch = l === 0
-            ? 'É a previsão para a prata no estado fundamental (5s¹). A placa mostrou dois feixes.'
-            : 'Sempre um número ímpar de feixes. A prata mostrou um número par: dois.';
+            ? t.res_orbital_l0_detail(inl('l = 0'), inl('m_l = 0'))
+            : t.res_orbital_multi_detail(letter, inl(`l = ${l}`), inl(`2l+1 = ${n}`), inl('m_l = 0'));
+        const punch = l === 0 ? t.res_orbital_l0_punch : t.res_orbital_multi_punch;
         return {
             ...base,
-            kicker: `Quantização orbital · ${letter}`,
-            title: l === 0 ? 'Um único feixe, sem desvio' : `${n} feixes, um no centro`,
+            kicker: t.res_orbital_kicker(letter),
+            title: l === 0 ? t.res_orbital_title_zero : t.res_orbital_title_multi(n),
             accent: '#a78bfa', accent2: '#6366f1',
             html: `
-                <p>Se apenas o momento angular <b>orbital</b> contasse, sua projeção no eixo do campo seria quantizada:</p>
+                <p>${t.res_orbital_intro}</p>
                 <div class="nc-eq">
                     ${tex('L_z = m_l\\,\\hbar, \\qquad m_l = -l, \\dots, +l')}
                     ${tex('\\mu_z = -\\mu_B\\, m_l')}
@@ -1025,29 +1055,30 @@ function buildResultCardConfig() {
     // Modo clássico
     return {
         ...base,
-        kicker: 'Modelo clássico', title: 'Uma faixa contínua',
+        kicker: t.res_classic_kicker, title: t.res_classic_title,
         accent: '#cbd5e1', accent2: '#64748b',
         html: `
-            <p>Um ímã clássico pode apontar em qualquer direção. No vapor quente do forno, as orientações são <b>isotrópicas</b>, e a força depende do ângulo ${inl('\\theta')} com o campo:</p>
+            <p>${t.res_classic_p1(inl('\\theta'))}</p>
             <div class="nc-eq">${tex('F_z = |\\vec\\mu|\\cos\\theta\\,\\frac{\\partial B_z}{\\partial z}, \\qquad \\cos\\theta \\in [-1,\\,1]')}</div>
-            <p>A precessão em torno de ${inl('\\vec B')} conserva ${inl('\\theta')}: cada átomo sofre uma deflexão fixa — e todas são possíveis. Os impactos preenchem a faixa <b>sem lacunas</b>; as bordas afinam onde o gradiente enfraquece.</p>
-            <p class="nc-punch">Nenhum valor é proibido. Em 1922, a placa discordou.</p>`
+            <p>${t.res_classic_p2(inl('\\vec B'), inl('\\theta'))}</p>
+            <p class="nc-punch">${t.res_classic_punch}</p>`
     };
 }
 
 function createDetectorLabels() {
     clearDetectorLabels();
+    const t = translations[currentLang] || translations.en;
 
     if (simMode === 'spin') {
         activeDetectorLabels.push(
             createBeamTag({
                 main: renderTex('m_s = +\\tfrac{1}{2}'),
-                sub: `spin ↑ · ${renderTex('S_z = +\\hbar/2')}`,
+                sub: t.beam_spin_up_sub(renderTex('S_z = +\\hbar/2')),
                 color: '#38bdf8', y: 3.2, index: 0
             }),
             createBeamTag({
                 main: renderTex('m_s = -\\tfrac{1}{2}'),
-                sub: `spin ↓ · ${renderTex('S_z = -\\hbar/2')}`,
+                sub: t.beam_spin_down_sub(renderTex('S_z = -\\hbar/2')),
                 color: '#ec4899', y: -3.2, index: 1
             })
         );
@@ -1055,7 +1086,7 @@ function createDetectorLabels() {
         if (currentL === 0) {
             activeDetectorLabels.push(createBeamTag({
                 main: renderTex('m_l = 0'),
-                sub: `${renderTex('L_z = 0')} · sem desvio`,
+                sub: t.beam_orbital_no_deflection(renderTex('L_z = 0')),
                 color: '#a78bfa', y: 0
             }));
         } else {
@@ -1078,7 +1109,7 @@ function createDetectorLabels() {
         }
     } else if (simMode === 'classic') {
         activeDetectorLabels.push(createBeamTag({
-            main: `${renderTex('\\mu_z')} contínuo`,
+            main: t.beam_classic_main(renderTex('\\mu_z')),
             sub: renderTex('-|\\vec\\mu| \\le \\mu_z \\le +|\\vec\\mu|'),
             color: '#cbd5e1', y: 0
         }));
@@ -1168,7 +1199,73 @@ function animate(timestamp) {
     labelRenderer.render(scene, camera);
 }
 
-// Inicializar visual dos ímãs, textos explicativos, etiquetas e loop
+// Internacionalização: Função para alternar o idioma
+function setLanguage(lang) {
+    if (!translations[lang]) return;
+    currentLang = lang;
+    localStorage.setItem('sg_sim_lang', lang);
+
+    // Atualiza estado dos botões de idioma
+    if (btnLangEn) btnLangEn.classList.toggle('active', lang === 'en');
+    if (btnLangPt) btnLangPt.classList.toggle('active', lang === 'pt');
+
+    const t = translations[lang];
+
+    // Atualiza metadados HTML
+    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+    if (t.page_title) document.title = t.page_title;
+
+    // Atualiza todos os elementos com data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+            el.innerHTML = t[key];
+        }
+    });
+
+    // Atualiza elementos com data-i18n-title
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (t[key] !== undefined) {
+            el.setAttribute('title', t[key]);
+        }
+    });
+
+    // Atualiza elementos com data-i18n-aria
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+        const key = el.getAttribute('data-i18n-aria');
+        if (t[key] !== undefined) {
+            el.setAttribute('aria-label', t[key]);
+        }
+    });
+
+    // Atualiza texto do botão Play/Pause respeitando o estado
+    if (playPauseText) {
+        playPauseText.textContent = isRunning ? t.btn_pause : t.btn_resume;
+    }
+
+    // Atualiza rótulos 3D do aparato
+    updateApparatusLabels();
+
+    // Reconstrói cards narrativos e etiquetas detectoras no novo idioma
+    buildPresentationLabels(apparatus);
+    createDetectorLabels();
+    updateNarrativeVisibility();
+
+    // Re-renderiza o LaTeX em toda a interface
+    renderDocumentMath();
+}
+
+// Event Listeners dos Botões de Idioma
+if (btnLangEn) {
+    btnLangEn.addEventListener('click', () => setLanguage('en'));
+}
+if (btnLangPt) {
+    btnLangPt.addEventListener('click', () => setLanguage('pt'));
+}
+
+// Inicializar idioma, visual dos ímãs, textos explicativos, etiquetas e loop
+setLanguage(currentLang);
 updateMagnetVisuals();
 updateInfoText();
 createDetectorLabels();
